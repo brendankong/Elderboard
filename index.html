@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF‑8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elderly Dashboard</title>
+
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+
+  <!-- Swiper -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+  <style>
+    body {
+      background-color: #fdf6e3;
+      font-size: 1.5rem;
+    }
+
+    .btn-large {
+      padding: 1.5rem;
+      font-size: 1.8rem;
+    }
+
+    #datetime-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding: 1rem;
+    }
+
+    #date,
+    #time {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    #day-symbol {
+      font-size: 2rem;
+    }
+
+    #photo-speed-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    .swiper {
+      width: 100%;
+      max-width: 600px;
+      height: 300px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .swiper-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #speedDial {
+      flex: 1 1 30%;
+      min-width: 250px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .toggle-games {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 1.5rem;
+      z-index: 1000;
+    }
+
+    #gamesModal iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container py-4">
+    <div id="datetime-container">
+      <div id="date"></div>
+      <div id="time"></div>
+      <div id="day-symbol"></div>
+    </div>
+
+    <div id="photo-speed-container" class="d-flex">
+      <!-- Swiper carousel -->
+      <div class="swiper">
+        <div class="swiper-wrapper" id="swiper-wrapper"></div>
+        <div class="swiper-pagination"></div>
+      </div>
+
+      <!-- Speed Dial Buttons -->
+      <div id="speedDial">
+        <a href="https://m.me/chipukai.yuko" target="_blank" class="btn btn-success btn-lg">
+          <i class="fas fa-phone"></i> Hui
+        </a>
+        <a href="https://m.me/brentharte7" target="_blank" class="btn btn-primary btn-lg">
+          <i class="fas fa-phone"></i> Brendan
+        </a>
+        <a href="https://m.me/05071995florencekong" target="_blank" class="btn btn-info btn-lg">
+          <i class="fas fa-phone"></i> Florence
+        </a>
+        <small class="text-muted">
+          *After tapping, press the <i class="fas fa-video"></i> icon to start a video call.
+        </small>
+      </div>
+    </div>
+
+    <!-- Games Modal Trigger -->
+    <button class="btn btn-warning toggle-games" data-bs-toggle="modal" data-bs-target="#gamesModal">
+      <i class="fas fa-gamepad"></i> Games
+    </button>
+
+    <!-- Games Modal -->
+    <div class="modal fade" id="gamesModal" tabindex="-1" aria-labelledby="gamesModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="gamesModalLabel">Games</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <iframe src="https://www.solitr.com/" title="Solitaire"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+  <script>
+    function updateDateTime() {
+      const now = new Date();
+      const day = now.getDate();
+      const month = now.toLocaleString('default', { month: 'long' }).toUpperCase();
+      const year = now.getFullYear();
+      const weekday = now.toLocaleString('default', { weekday: 'long' }).toUpperCase();
+
+      document.getElementById('date').textContent = `${day} ${month} ${year}, ${weekday}`;
+      document.getElementById('time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      document.getElementById('day-symbol').textContent = now.getHours() >= 6 && now.getHours() < 18 ? '🌞' : '🌜';
+    }
+
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+
+    async function loadPhotos() {
+      try {
+        const res = await fetch('/api/photos');
+        const imageUrls = await res.json();
+        const wrapper = document.getElementById('swiper-wrapper');
+        wrapper.innerHTML = '';
+        imageUrls.forEach(src => {
+          const slide = document.createElement('div');
+          slide.className = 'swiper-slide';
+          slide.innerHTML = `<img src="${src}" loading="lazy" alt="Album photo">`;
+          wrapper.appendChild(slide);
+        });
+
+        if (!window.mySwiper) {
+          window.mySwiper = new Swiper('.swiper', {
+            loop: true,
+            autoplay: { delay: 4000 },
+            pagination: { el: '.swiper-pagination', clickable: true }
+          });
+        } else {
+          window.mySwiper.update();
+        }
+      } catch (err) {
+        console.error('Failed to load photos:', err);
+      }
+    }
+
+    loadPhotos();
+    setInterval(loadPhotos, 60 * 60 * 1000); // Refresh hourly
+  </script>
+</body>
+
+</html>
